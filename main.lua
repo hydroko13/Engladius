@@ -1,3 +1,6 @@
+local button = require("gui.Button")
+
+
 local WIDTH, HEIGHT = 640, 360
 
 
@@ -6,7 +9,7 @@ function love.load()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
-   
+    
 
     gameCanvas = love.graphics.newCanvas(WIDTH, HEIGHT)
 
@@ -18,10 +21,13 @@ function love.load()
     love.mouse.setVisible(false)
     
 
-    engladiusFont = love.graphics.newFont("assets/alagard.ttf", 16)
+    engladiusFont = love.graphics.newFont("assets/alagard.ttf", 24)
     titleFont = love.graphics.newFont("assets/alagard.ttf", 64)
 
     cursorImg = love.graphics.newImage("assets/cursor.png")
+
+    playButton = button.newButton(WIDTH / 2, HEIGHT / 2 + 90, "Play")
+
     
     
     
@@ -33,11 +39,14 @@ function gameDraw(gameMouseX, gameMouseY)
     
     love.graphics.setFont(titleFont)
     love.graphics.setColor(1, 1, 1, 1)
+
     
     
     love.graphics.print("Engladius", WIDTH / 2 - titleFont:getWidth("Engladius") / 2, 50)
 
-
+    playButton:drawButton(engladiusFont, gameMouseX, gameMouseY)
+    
+    
     love.graphics.draw(cursorImg, gameMouseX - 16, gameMouseY - 16, 0, 2, 2)
     
 end
@@ -72,6 +81,8 @@ function love.draw()
     
     love.graphics.setCanvas()
 
+    love.graphics.setColor(1, 1, 1, 1)
+
     -- now we use scale value
     love.graphics.draw(gameCanvas, winWidth / 2 - (scale * WIDTH / 2), winHeight / 2 - (scale * HEIGHT / 2), 0, scale, scale)
 end
@@ -80,6 +91,8 @@ end
 function love.update(delta)
 
 end
+
+
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.keypressed(key, scancode, isrepeat)
