@@ -7,6 +7,7 @@ local enet = require("enet")
 local server_peer
 local client
 local waitingForDisconnect = false
+local connected = false
 
 
 
@@ -18,8 +19,7 @@ function love.load()
 
 
     client = enet.host_create()
-    server_peer = client:connect("localhost:9999")
-        
+    
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     
@@ -135,12 +135,11 @@ function love.update(delta)
     local event = client:service(0)
     while event do
         if event.type == "connect" then
-            print("Successfully connected to host")
+            gameState = "inGame"
+            connected = true
         end
         if event.type == "disconnect" then
-            if waitingForDisconnect then
-                love.event.quit()
-            end
+            love.event.quit()
         end
         if event.type == "receive" then
             print(event.data)
@@ -155,7 +154,22 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.quit()
+
     if waitingForDisconnect then return false end
+    
+    if not server_peer then return false end
+
+    if server_peer then
+        
+        if not connected then
+        
+            return false
+            
+        end
+        
+    end
+    
+    
         
     server_peer:disconnect()
     waitingForDisconnect = true
@@ -186,10 +200,10 @@ function love.mousepressed(mx, my, mButton)
         if gameState == "mainMenu" then
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
-            end
-        end
-        
-        
-    end
 
+                server_peer = client:connect("localhost:9999")
+                waitingForDisconnect = false
+            end
+        end 
+    end
 end
