@@ -2,6 +2,21 @@ local btn = {
    
 }
 
+function wasClicked(self, font, mousex, mousey)
+    love.graphics.setFont(font)
+    
+
+    local btnWidth = font:getWidth(self.text) + 15
+    local btnHeight = font:getHeight(self.text) + 8
+    local hovered = false
+
+    if mousex >= self.centerx - btnWidth / 2 and mousex <= self.centerx + btnWidth / 2 and mousey >= self.centery - btnHeight / 2 and mousey <= self.centery + btnHeight / 2 then
+        hovered = true
+    end
+    
+    return hovered
+end
+
 function drawButton(self, font, mousex, mousey)
     love.graphics.setFont(font)
     
@@ -36,7 +51,8 @@ function btn.newButton(centerx, centery, text)
         centerx = centerx,
         centery = centery,
         text = text,
-        drawButton = drawButton
+        drawButton = drawButton,
+        wasClicked = wasClicked
     }
 end
 
