@@ -3,7 +3,10 @@ local vers = "0.0.1-dev"
 
 
 local button = require("gui.Button")
-
+local enet = require("enet")
+local server_peer
+local client
+local waitingForDisconnect = false
 
 
 
@@ -13,6 +16,10 @@ local WIDTH, HEIGHT = 640, 360
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
 
+
+    client = enet.host_create()
+    server_peer = client:connect("localhost:9999")
+        
     love.graphics.setDefaultFilter("nearest", "nearest")
 
     
@@ -41,6 +48,7 @@ function love.load()
 
 
     gameState = "mainMenu"
+
 
     
     
@@ -117,12 +125,42 @@ function love.draw()
     love.graphics.draw(gameCanvas, winWidth / 2 - (scale * WIDTH / 2), winHeight / 2 - (scale * HEIGHT / 2), 0, scale, scale)
 end
 
+
+
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+    if not client then return end
+    if not server_peer then return end
 
+    local event = client:service(0)
+    while event do
+        if event.type == "connect" then
+            print("Successfully connected to host")
+        end
+        if event.type == "disconnect" then
+            if waitingForDisconnect then
+                love.event.quit()
+            end
+        end
+        if event.type == "receive" then
+            print(event.data)
+        end
+
+        
+        
+        event = client:service(0)
+    end
+    
 end
 
-
+---@diagnostic disable-next-line: duplicate-set-field
+function love.quit()
+    if waitingForDisconnect then return false end
+        
+    server_peer:disconnect()
+    waitingForDisconnect = true
+    return true
+end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.keypressed(key, scancode, isrepeat)
