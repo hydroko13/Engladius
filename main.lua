@@ -12,6 +12,10 @@ local player
 local camera = {x = 0, y = 0}
 
 local WIDTH, HEIGHT = 640, 360
+local tick = 0
+local tick_timer = 0.0
+local tick_rate = 20.0
+
 
 function math.round(x)
   return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
@@ -155,6 +159,18 @@ function love.draw()
 end
 
 
+function ontick() 
+
+    if player then
+
+        local pos_packet_string = love.data.pack("string", "<i4i4", math.round(player.x), math.round(player.y))
+        server_peer:send(pos_packet_string, 0, "unreliable")
+    end
+
+    
+    
+end
+
 function joined()
     player = {x = 0, y = 0}
 end
@@ -162,7 +178,16 @@ end
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
 
+    
+
     if gameState == "inGame" then
+        tick_timer = tick_timer + delta
+        if tick_timer >= 1.0 / tick_rate then
+            tick = tick + 1
+            tick_timer = 0.0
+            ontick()
+        end
+        
         if player then
             camera.x = camera.x + (player.x - camera.x) * delta * 5.5
             camera.y = camera.y + (player.y - camera.y) * delta * 5.5
