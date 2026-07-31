@@ -3,7 +3,6 @@ io.stdout:setvbuf("no")
 local enet = require("enet")
 local server
 local players = {}
-local tick = 0
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
@@ -38,15 +37,6 @@ function love.update(delta)
         end
 
         event = server:service(0)
-    end
-
-    tick = tick + delta
-
-    if tick >= 5 then
-        for i = 1, #players do
-            players[i]:disconnect()
-        end
-        tick = 0
     end
     
 end
