@@ -23,17 +23,34 @@ function love.update(delta)
     local event = server:service(0)
     while event do
         if event.type == "connect" then
-            print("Client connected")
-            table.insert(players, event.peer)
+            local id_str = tostring(event.peer)
+            print("Client connected with id " .. id_str)
+            players[id_str] = {
+                x = 0,
+                y = 0,
+                peer = event.peer,
+            }
         end
 
         if event.type == "disconnect" then
-            print("Client disconnected")
+            local id_str = tostring(event.peer)
+            print("Client disconnected with id " .. id_str)
+            players[id_str] = nil
         end
 
         if event.type == "receive" then
-            print("Received data from client")
-            print(event.data)
+            local id_str = tostring(event.peer)
+
+            if event.data[1] == "p" then
+                local player = players[id_str]
+                if player then
+                    local x, y = love.data.unpack("<ff", event.data)
+                    player.x = x
+                    player.y = y
+                end
+            end
+            
+            
         end
 
         event = server:service(0)

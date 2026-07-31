@@ -163,8 +163,8 @@ function ontick()
 
     if player then
 
-        local pos_packet_string = love.data.pack("string", "<i4i4", math.round(player.x), math.round(player.y))
-        server_peer:send(pos_packet_string, 0, "unreliable")
+        local pos_packet_string = love.data.pack("string", "<ff", player.x, player.y)
+        server_peer:send("p" .. pos_packet_string, 0, "unreliable")
     end
 
     
