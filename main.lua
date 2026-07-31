@@ -6,7 +6,6 @@ local button = require("gui.Button")
 local enet = require("enet")
 local server_peer
 local client
-local waitingForDisconnect = false
 local connected = false
 
 local player
@@ -55,7 +54,7 @@ function love.load()
 
     playerImage = love.graphics.newImage("assets/player.png")
 
-
+    grassImage = love.graphics.newImage("assets/grass_tile.png")
     
     
     
@@ -96,7 +95,12 @@ function gameDraw(gameMouseX, gameMouseY)
         
         
         love.graphics.translate(math.round(camoffsetx), math.round(camoffsety))
-        
+
+        for i = -50, 50, 1 do
+            for j = -50, 50, 1 do
+                love.graphics.draw(grassImage, math.round(i * grassImage:getWidth()), math.round(j * grassImage:getHeight()))
+            end
+        end
     
         if player then
             love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2), math.round(player.y - playerImage:getHeight() / 2))
@@ -160,21 +164,21 @@ function love.update(delta)
 
     if gameState == "inGame" then
         if player then
-            camera.x = camera.x + (player.x - camera.x) * delta * 7.5
-            camera.y = camera.y + (player.y - camera.y) * delta * 7.5
+            camera.x = camera.x + (player.x - camera.x) * delta * 5.5
+            camera.y = camera.y + (player.y - camera.y) * delta * 5.5
 
 
             if love.keyboard.isDown("w") then
-                player.y = player.y - 60 * delta
+                player.y = player.y - 110 * delta
             end
             if love.keyboard.isDown("s") then
-                player.y = player.y + 60 * delta
+                player.y = player.y + 110 * delta
             end
             if love.keyboard.isDown("a") then
-                player.x = player.x - 60 * delta
+                player.x = player.x - 110 * delta
             end
             if love.keyboard.isDown("d") then
-                player.x = player.x + 60 * delta
+                player.x = player.x + 110 * delta
             end
         end
         
@@ -208,25 +212,14 @@ end
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.quit()
 
-    if waitingForDisconnect then return false end
-    
     if not server_peer then return false end
 
-    if server_peer then
-        
-        if not connected then
-        
-            return false
-            
-        end
-        
-    end
-    
     
         
     server_peer:disconnect()
-    waitingForDisconnect = true
-    return true
+    
+    client:service(800)
+    return false
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
