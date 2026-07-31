@@ -9,10 +9,14 @@ local client
 local waitingForDisconnect = false
 local connected = false
 
-
+local player
+local camera = {x = 0, y = 0}
 
 local WIDTH, HEIGHT = 640, 360
 
+function math.round(x)
+  return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
+end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
@@ -28,7 +32,7 @@ function love.load()
 
     love.window.setTitle("Engladius")
     love.window.setMode(1280, 720, { fullscreen = false, fullscreentype = "desktop", resizable = true })
-
+    love.window.maximize()
 
     local iconImg = love.image.newImageData("assets/engladius_icon.png")
 
@@ -48,6 +52,8 @@ function love.load()
 
 
     gameState = "mainMenu"
+
+    playerImage = love.graphics.newImage("assets/player.png")
 
 
     
@@ -78,6 +84,25 @@ function gameDraw(gameMouseX, gameMouseY)
         love.graphics.print("Connecting...", WIDTH / 2 - engladiusFont:getWidth("Connecting...") / 2, HEIGHT / 2 - 100)
     elseif gameState == "inGame" then
 
+        local camoffsetx = -camera.x
+        local camoffsety = -camera.y
+
+        love.graphics.push()
+
+
+        
+        love.graphics.translate(WIDTH / 2, HEIGHT / 2)
+
+        
+        
+        love.graphics.translate(math.round(camoffsetx), math.round(camoffsety))
+        
+    
+        if player then
+            love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2), math.round(player.y - playerImage:getHeight() / 2))
+        end
+
+        love.graphics.pop()
     end
 
    
@@ -126,9 +151,35 @@ function love.draw()
 end
 
 
+function joined()
+    player = {x = 0, y = 0}
+end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+
+    if gameState == "inGame" then
+        if player then
+            camera.x = camera.x + (player.x - camera.x) * delta * 7.5
+            camera.y = camera.y + (player.y - camera.y) * delta * 7.5
+
+
+            if love.keyboard.isDown("w") then
+                player.y = player.y - 60 * delta
+            end
+            if love.keyboard.isDown("s") then
+                player.y = player.y + 60 * delta
+            end
+            if love.keyboard.isDown("a") then
+                player.x = player.x - 60 * delta
+            end
+            if love.keyboard.isDown("d") then
+                player.x = player.x + 60 * delta
+            end
+        end
+        
+    end
+
     if not client then return end
     if not server_peer then return end
 
@@ -137,6 +188,7 @@ function love.update(delta)
         if event.type == "connect" then
             gameState = "inGame"
             connected = true
+            joined()
         end
         if event.type == "disconnect" then
             love.event.quit()
@@ -145,10 +197,11 @@ function love.update(delta)
             print(event.data)
         end
 
-        
-        
+
+
         event = client:service(0)
     end
+    
     
 end
 
