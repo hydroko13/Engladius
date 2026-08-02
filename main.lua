@@ -16,6 +16,8 @@ local tick = 0
 local tick_timer = 0.0
 local tick_rate = 20.0
 
+local server_players = {}
+
 
 function math.round(x)
   return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
@@ -105,10 +107,18 @@ function gameDraw(gameMouseX, gameMouseY)
                 love.graphics.draw(grassImage, math.round(i * grassImage:getWidth()), math.round(j * grassImage:getHeight()))
             end
         end
-    
-        if player then
-            love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2), math.round(player.y - playerImage:getHeight() / 2))
+
+        for player_id, server_player in pairs(server_players) do
+            love.graphics.draw(playerImage, math.round(server_player.x - playerImage:getWidth() / 2),
+                math.round(server_player.y - playerImage:getHeight() / 2))
         end
+        
+        if player then
+            love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2),
+                math.round(player.y - playerImage:getHeight() / 2))
+        end
+
+
 
         love.graphics.pop()
     end
@@ -194,16 +204,16 @@ function love.update(delta)
 
 
             if love.keyboard.isDown("w") then
-                player.y = player.y - 110 * delta
+                player.y = player.y - 130 * delta
             end
             if love.keyboard.isDown("s") then
-                player.y = player.y + 110 * delta
+                player.y = player.y + 130 * delta
             end
             if love.keyboard.isDown("a") then
-                player.x = player.x - 110 * delta
+                player.x = player.x - 130 * delta
             end
             if love.keyboard.isDown("d") then
-                player.x = player.x + 110 * delta
+                player.x = player.x + 130 * delta
             end
         end
         
@@ -223,9 +233,23 @@ function love.update(delta)
             love.event.quit()
         end
         if event.type == "receive" then
-            print(event.data)
-        end
 
+            if event.data:sub(1, 1) == "j" then -- New Player joined
+                local _, player_id, x, y = love.data.unpack("<i1I4ff", event.data)
+                print(player_id, x, y)
+                server_players[player_id] = { x = x, y = y }
+            elseif event.data:sub(1, 1) == "l" then -- Player left
+                local _, player_id = love.data.unpack("<i1I4", event.data)
+                server_players[player_id] = nil
+            elseif event.data:sub(1, 1) == "p" then
+                local _, player_id, x, y = love.data.unpack("<i1I4ff", event.data)
+                
+                server_players[player_id].x = x
+                server_players[player_id].y = y
+            
+            
+            end
+        end
 
 
         event = client:service(0)
