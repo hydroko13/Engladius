@@ -21,7 +21,7 @@ local enet = require("enet")
 local server
 local players = {}
 local player_addr_to_id = {}
-local broadcast_positions_rate = 20
+local broadcast_positions_rate = 45
 local broadcast_positions_timer = 0
 
 ---@diagnostic disable-next-line: duplicate-set-field
