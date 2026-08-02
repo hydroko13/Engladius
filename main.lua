@@ -272,7 +272,7 @@ function love.mousepressed(mx, my, mButton)
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
 
-                server_peer = client:connect("localhost:9999")
+                server_peer = client:connect("209.103.45.67:9999")
                 waitingForDisconnect = false
             end
         end
