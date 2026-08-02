@@ -192,8 +192,8 @@ function love.update(delta)
         end
 
         if player then
-            camera.x = camera.x + (player.x - camera.x) * delta * 5.5
-            camera.y = camera.y + (player.y - camera.y) * delta * 5.5
+            camera.x = camera.x + (player.x - camera.x) * delta * 2.5
+            camera.y = camera.y + (player.y - camera.y) * delta * 2.5
 
 
 
@@ -202,8 +202,8 @@ function love.update(delta)
             player.input_state.left = love.keyboard.isDown("a")
             player.input_state.right = love.keyboard.isDown("d")
 
-            player.x = lerp(player.x, player.target_x, delta * tick_rate)
-            player.y = lerp(player.y, player.target_y, delta * tick_rate)
+            player.x = lerp(player.x, player.target_x, delta * 45)
+            player.y = lerp(player.y, player.target_y, delta * 45)
         end
     end
 
