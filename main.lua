@@ -16,6 +16,7 @@ local tick = 0
 local tick_timer = 0.0
 local tick_rate = 45.0
 
+
 local server_players = {}
 
 function math.round(x)
@@ -138,7 +139,7 @@ function love.draw()
     love.graphics.clear(0, 0.2, 0.2, 1)
 
 
-
+    
 
 
 
@@ -169,6 +170,7 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+    
     if gameState == "inGame" then
         tick_timer = tick_timer + delta
         if tick_timer >= 1.0 / tick_rate then
@@ -194,6 +196,7 @@ function love.update(delta)
             if love.keyboard.isDown("d") then
                 player.x = player.x + 130 * delta
             end
+
         end
     end
 
@@ -234,7 +237,8 @@ function love.update(delta)
     for player_id, server_player in pairs(server_players) do
         server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
         server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
-    end
+    end 
+
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -272,7 +276,7 @@ function love.mousepressed(mx, my, mButton)
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
 
-                server_peer = client:connect("209.103.45.67:9999")
+                server_peer = client:connect("localhost:9999")
                 waitingForDisconnect = false
             end
         end

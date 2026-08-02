@@ -27,7 +27,7 @@ local broadcast_positions_timer = 0
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
-    server = enet.host_create("*:9999")
+    server = enet.host_create("0.0.0.0:9999")
     if server == nil then
         print("Server failed to create")
         love.event.quit()
