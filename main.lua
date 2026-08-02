@@ -16,8 +16,6 @@ local WIDTH, HEIGHT = 640, 360
 local tick = 0
 local tick_timer = 0.0
 local tick_rate = 45.0
-
-
 local server_players = {}
 
 function math.round(x)
@@ -112,7 +110,7 @@ function gameDraw(gameMouseX, gameMouseY)
             love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2),
                 math.round(player.y - playerImage:getHeight() / 2))
         end
-
+        
 
 
         love.graphics.pop()
@@ -172,6 +170,8 @@ function joined()
     player = {
         x = 0,
         y = 0,
+        target_x = 0,
+        target_y = 0,
         input_state = {
             left = false,
             right = false,
@@ -201,6 +201,9 @@ function love.update(delta)
             player.input_state.down = love.keyboard.isDown("s")
             player.input_state.left = love.keyboard.isDown("a")
             player.input_state.right = love.keyboard.isDown("d")
+
+            player.x = lerp(player.x, player.target_x, delta * tick_rate)
+            player.y = lerp(player.y, player.target_y, delta * tick_rate)
         end
     end
 
@@ -230,6 +233,11 @@ function love.update(delta)
 
                 server_players[player_id].target_x = x
                 server_players[player_id].target_y = y
+            elseif event.data:sub(1, 1) == "I" then
+                local _, x, y = love.data.unpack("<i1ff", event.data)
+    
+                player.target_x = x
+                player.target_y = y
             end
         end
 
