@@ -25,8 +25,6 @@ local player_addr_to_id = {}
 local broadcast_positions_rate = 45
 local broadcast_positions_timer = 0
 
-
-
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
@@ -70,7 +68,7 @@ function love.update(delta)
                 y = 0,
                 peer = event.peer,
                 input_state = { down = false, up = false, right = false, left = false, seq = 0 },
-                last_processed_input = 0,
+                input_frames_to_process = {}
             }
             player_addr_to_id[tostring(event.peer)] = id_str
         end
@@ -100,14 +98,13 @@ function love.update(delta)
             if event.data:sub(1, 1) == "p" then
                 local player = players[id_str]
                 if player then
-                    local _, input_byte = love.data.unpack("<i1I1", event.data)
+                    local _, seq_num, input_byte = love.data.unpack("<i1I4I1", event.data)
                     local down = bit.band(input_byte, 1) ~= 0
                     local up = bit.band(input_byte, 2) ~= 0
                     local right = bit.band(input_byte, 4) ~= 0
                     local left = bit.band(input_byte, 8) ~= 0
-                    player.input_state = { down = down, up = up, right = right, left = left}
 
-
+                    player.input_frames_to_process[seq_num] = { down = down, up = up, right = right, left = left }
                     
                 end
             end
@@ -121,19 +118,35 @@ function love.update(delta)
     if broadcast_positions_timer >= 1 / broadcast_positions_rate then
 
         for player_id, player in pairs(players) do
-            if player.input_state.down then
-                player.y = player.y + broadcast_positions_timer * 130
+
+            local seq_nums = {}
+
+            for seq_num, input_state in pairs(player.input_frames_to_process) do
+                seq_nums[#seq_nums + 1] = seq_num
             end
-            if player.input_state.up then
-                player.y = player.y - broadcast_positions_timer * 130
+
+            table.sort(seq_nums)
+            
+
+            for _, seq_num in ipairs(seq_nums) do
+                local input_state = player.input_frames_to_process[seq_num]
+                if input_state.down then
+                    player.y = player.y + broadcast_positions_timer * 130
+                end
+                if input_state.up then
+                    player.y = player.y - broadcast_positions_timer * 130
+                end
+                if input_state.right then
+                    player.x = player.x + broadcast_positions_timer * 130
+                end
+                if input_state.left then
+                    player.x = player.x - broadcast_positions_timer * 130
+                end
+                player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end
-            if player.input_state.right then
-                player.x = player.x + broadcast_positions_timer * 130
-            end
-            if player.input_state.left then
-                player.x = player.x - broadcast_positions_timer * 130
-            end
-            player.peer:send("I" .. love.data.pack("string", "<ff", player.x, player.y), 0, "unreliable")
+
+            player.input_frames_to_process = {}
+            
         end
 
         

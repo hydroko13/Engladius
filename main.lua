@@ -18,6 +18,10 @@ local tick_timer = 0.0
 local tick_rate = 45.0
 local server_players = {}
 
+local TICK_DT = 1.0 / 45.0
+
+local pending_inputs = {}
+
 function math.round(x)
     return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
 end
@@ -139,7 +143,6 @@ function love.draw()
 
 
 
-
     gameDraw(gameMouseX, gameMouseY)
 
 
@@ -161,8 +164,9 @@ function ontick()
             bit.bor(bit.bor((player.input_state.down and 1 or 0), bit.lshift(player.input_state.up and 1 or 0, 1)),
                 bit.lshift(player.input_state.right and 1 or 0, 2), bit.lshift(player.input_state.left and 1 or 0, 3))
         )
-        local inputstate_packet_string = love.data.pack("string", "<I1", packed)
+        local inputstate_packet_string = love.data.pack("string", "<I4I1", tick, packed)
         server_peer:send("p" .. inputstate_packet_string, 0, "unreliable")
+        pending_inputs[tick] = {up = player.input_state.up, down = player.input_state.down, left = player.input_state.left, right = player.input_state.right, dt = player.input_state.dt}
     end
 end
 
@@ -177,35 +181,14 @@ function joined()
             right = false,
             up = false,
             down = false,
+            dt = 0.0
         }
     }
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
-    if gameState == "inGame" then
-        tick_timer = tick_timer + delta
-        if tick_timer >= 1.0 / tick_rate then
-            tick = tick + 1
-            tick_timer = 0.0
-            ontick()
-        end
-
-        if player then
-            camera.x = camera.x + (player.x - camera.x) * delta * 2.5
-            camera.y = camera.y + (player.y - camera.y) * delta * 2.5
-
-
-
-            player.input_state.up = love.keyboard.isDown("w")
-            player.input_state.down = love.keyboard.isDown("s")
-            player.input_state.left = love.keyboard.isDown("a")
-            player.input_state.right = love.keyboard.isDown("d")
-
-            player.x = lerp(player.x, player.target_x, delta * 45)
-            player.y = lerp(player.y, player.target_y, delta * 45)
-        end
-    end
+    
 
     if not client then return end
     if not server_peer then return end
@@ -234,10 +217,50 @@ function love.update(delta)
                 server_players[player_id].target_x = x
                 server_players[player_id].target_y = y
             elseif event.data:sub(1, 1) == "I" then
-                local _, x, y = love.data.unpack("<i1ff", event.data)
+                local _, seq, x, y = love.data.unpack("<i1I4ff", event.data)
+
+                player.x = x
+                player.y = y
+                
+
+                local seq_nums = {}
     
-                player.target_x = x
-                player.target_y = y
+                for seq_num, input_state in pairs(pending_inputs) do
+                    seq_nums[#seq_nums + 1] = seq_num
+                end
+    
+                table.sort(seq_nums)
+
+                for _, tick in ipairs(seq_nums) do
+                    local input = pending_inputs[tick]
+                    if tick <= seq then
+                        pending_inputs[tick] = nil
+                    else
+                        player.input_state.up = input.up
+                        player.input_state.down = input.down
+                        player.input_state.left = input.left
+                        player.input_state.right = input.right
+                        if player.input_state.up then
+                            player.y = player.y - TICK_DT * 130
+                        end
+                        if player.input_state.down then
+                            player.y = player.y + TICK_DT * 130
+                        end
+                        if player.input_state.left then
+                            player.x = player.x - TICK_DT * 130
+                        end
+                        if player.input_state.right then
+                            player.x = player.x + TICK_DT * 130
+                        end
+                    end
+                    
+                end
+
+                
+                
+
+
+                
             end
         end
 
@@ -246,10 +269,49 @@ function love.update(delta)
     end
 
 
-    for player_id, server_player in pairs(server_players) do
-        server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
-        server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
+    if gameState == "inGame" then
+
+
+        if player then
+            camera.x = camera.x + (player.x - camera.x) * delta * 2.5
+            camera.y = camera.y + (player.y - camera.y) * delta * 2.5
+
+
+
+            player.input_state.up = love.keyboard.isDown("w")
+            player.input_state.down = love.keyboard.isDown("s")
+            player.input_state.left = love.keyboard.isDown("a")
+            player.input_state.right = love.keyboard.isDown("d")
+            player.input_state.dt = delta
+
+            if player.input_state.up then
+                player.y = player.y - TICK_DT * 130
+            end
+            if player.input_state.down then
+                player.y = player.y + TICK_DT * 130
+            end
+            if player.input_state.left then
+                player.x = player.x - TICK_DT * 130
+            end
+            if player.input_state.right then
+                player.x = player.x + TICK_DT * 130
+            end
+        end
+
+        for player_id, server_player in pairs(server_players) do
+            server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
+            server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
+        end
+
+        tick_timer = tick_timer + delta
+        if tick_timer >= 1.0 / tick_rate then
+            tick = tick + 1
+            tick_timer = 0.0
+            ontick()
+        end
     end
+
+
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
