@@ -18,6 +18,7 @@ function get_mex(arr)
 end
 
 local enet = require("enet")
+local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
@@ -43,7 +44,6 @@ function love.update(delta)
     local event = server:service(0)
     while event do
         if event.type == "connect" then
-
             local ids = {}
             for id, _ in pairs(players) do
                 table.insert(ids, tonumber(id))
@@ -54,7 +54,6 @@ function love.update(delta)
 
             -- Notify other players of new joiner
             for _, player in pairs(players) do
-                
                 player.peer:send("j" .. love.data.pack("string", "<I4ff", mex, 0.0, 0.0), 0, "reliable")
             end
 
@@ -63,24 +62,20 @@ function love.update(delta)
                 print(player_id, player.x, player.y)
                 event.peer:send("j" .. love.data.pack("string", "<I4ff", player_id, player.x, player.y), 0, "reliable")
             end
-                
+
             players[id_str] = {
                 x = 0,
                 y = 0,
                 peer = event.peer,
+                input_state = { down = false, up = false, right = false, left = false },
             }
             player_addr_to_id[tostring(event.peer)] = id_str
-
-
-
-
-            
         end
 
         if event.type == "disconnect" then
             local addr = tostring(event.peer)
             local id_str = player_addr_to_id[addr]
-            
+
             print("Client disconnected with id " .. id_str)
             players[id_str] = nil
             player_addr_to_id[addr] = nil
@@ -89,17 +84,10 @@ function love.update(delta)
             local id_num = tonumber(id_str)
 
             if id_num then
-
                 for _, player in pairs(players) do -- Notify other players of leaving
                     player.peer:send("l" .. love.data.pack("string", "<I4", id_num), 0, "reliable")
                 end
-                
             end
-
-            
-
-            
-        
         end
 
         if event.type == "receive" then
@@ -109,16 +97,32 @@ function love.update(delta)
             if event.data:sub(1, 1) == "p" then
                 local player = players[id_str]
                 if player then
-                    local _, x, y = love.data.unpack("<i1ff", event.data)
-                    player.x = x
-                    player.y = y
+                    local _, input_byte = love.data.unpack("<i1I1", event.data)
+                    local down = bit.band(input_byte, 1) ~= 0
+                    local up = bit.band(input_byte, 2) ~= 0
+                    local right = bit.band(input_byte, 4) ~= 0
+                    local left = bit.band(input_byte, 8) ~= 0
+                    player.input_state = { down = down, up = up, right = right, left = left }
                 end
             end
-            
-            
         end
 
         event = server:service(0)
+    end
+
+    for player_id, player in pairs(players) do
+        if player.input_state.down then
+            player.y = player.y + delta * 130
+        end
+        if player.input_state.up then
+            player.y = player.y - delta * 130
+        end
+        if player.input_state.right then
+            player.x = player.x + delta * 130
+        end
+        if player.input_state.left then
+            player.x = player.x - delta * 130
+        end
     end
 
     broadcast_positions_timer = broadcast_positions_timer + delta

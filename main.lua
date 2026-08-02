@@ -4,6 +4,7 @@ local vers = "0.0.1-dev"
 
 local button = require("gui.Button")
 local enet = require("enet")
+local bit = require("bit")
 local server_peer
 local client
 local connected = false
@@ -157,18 +158,31 @@ end
 
 function ontick()
     if player then
-        local pos_packet_string = love.data.pack("string", "<ff", player.x, player.y)
-        server_peer:send("p" .. pos_packet_string, 0, "unreliable")
+        -- use bitpacking to store the 4 input state booleans into a single byte
+        local packed = bit.bor(
+            bit.bor(bit.bor((player.input_state.down and 1 or 0), bit.lshift(player.input_state.up and 1 or 0, 1)),
+                bit.lshift(player.input_state.right and 1 or 0, 2), bit.lshift(player.input_state.left and 1 or 0, 3))
+        )
+        local inputstate_packet_string = love.data.pack("string", "<I1", packed)
+        server_peer:send("p" .. inputstate_packet_string, 0, "unreliable")
     end
 end
 
 function joined()
-    player = { x = 0, y = 0 }
+    player = {
+        x = 0,
+        y = 0,
+        input_state = {
+            left = false,
+            right = false,
+            up = false,
+            down = false,
+        }
+    }
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
-
     if gameState == "inGame" then
         tick_timer = tick_timer + delta
         if tick_timer >= 1.0 / tick_rate then
@@ -182,19 +196,11 @@ function love.update(delta)
             camera.y = camera.y + (player.y - camera.y) * delta * 5.5
 
 
-            if love.keyboard.isDown("w") then
-                player.y = player.y - 130 * delta
-            end
-            if love.keyboard.isDown("s") then
-                player.y = player.y + 130 * delta
-            end
-            if love.keyboard.isDown("a") then
-                player.x = player.x - 130 * delta
-            end
-            if love.keyboard.isDown("d") then
-                player.x = player.x + 130 * delta
-            end
 
+            player.input_state.up = love.keyboard.isDown("w")
+            player.input_state.down = love.keyboard.isDown("s")
+            player.input_state.left = love.keyboard.isDown("a")
+            player.input_state.right = love.keyboard.isDown("d")
         end
     end
 
@@ -236,7 +242,6 @@ function love.update(delta)
         server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
         server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
     end
-
 end
 
 ---@diagnostic disable-next-line: duplicate-set-field
