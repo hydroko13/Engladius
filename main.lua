@@ -29,8 +29,6 @@ function love.load()
 
     love.graphics.setDefaultFilter("nearest", "nearest")
 
-
-
     gameCanvas = love.graphics.newCanvas(WIDTH, HEIGHT)
 
     love.window.setTitle("Engladius")
@@ -105,8 +103,8 @@ function gameDraw(gameMouseX, gameMouseY)
         end
 
         for player_id, server_player in pairs(server_players) do
-            love.graphics.draw(playerImage, math.round(server_player.x + playerImage:getWidth() / 2),
-                math.round(server_player.y + playerImage:getHeight() / 2))
+            love.graphics.draw(playerImage, math.round(server_player.x - playerImage:getWidth() / 2),
+                math.round(server_player.y - playerImage:getHeight() / 2))
         end
 
         if player then
@@ -139,7 +137,7 @@ function love.draw()
     love.graphics.clear(0, 0.2, 0.2, 1)
 
 
-    
+
 
 
 
@@ -170,7 +168,7 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
-    
+
     if gameState == "inGame" then
         tick_timer = tick_timer + delta
         if tick_timer >= 1.0 / tick_rate then
@@ -237,7 +235,7 @@ function love.update(delta)
     for player_id, server_player in pairs(server_players) do
         server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
         server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
-    end 
+    end
 
 end
 
