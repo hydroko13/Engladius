@@ -237,15 +237,22 @@ function love.update(delta)
             if event.data:sub(1, 1) == "j" then -- New Player joined
                 local _, player_id, x, y = love.data.unpack("<i1I4ff", event.data)
                 print(player_id, x, y)
-                server_players[player_id] = { x = x, y = y, target_x = x, target_y = y }
+                server_players[player_id] = { x = x, y = y, target_x = x, target_y = y, last_seq = 0 }
             elseif event.data:sub(1, 1) == "l" then -- Player left
                 local _, player_id = love.data.unpack("<i1I4", event.data)
                 server_players[player_id] = nil
             elseif event.data:sub(1, 1) == "p" then
-                local _, player_id, x, y = love.data.unpack("<i1I4ff", event.data)
+                local _, player_id, seq, x, y = love.data.unpack("<i1I4I4ff", event.data)
 
-                server_players[player_id].target_x = x
-                server_players[player_id].target_y = y
+                local p = server_players[player_id]
+
+                if seq > p.last_seq then
+                    server_players[player_id].target_x = x
+                    server_players[player_id].target_y = y
+                    p.last_seq = seq
+                end
+                
+
             elseif event.data:sub(1, 1) == "I" then
                 local _, seq, x, y = love.data.unpack("<i1I4ff", event.data)
 
@@ -300,8 +307,8 @@ function love.update(delta)
 
         
         for player_id, server_player in pairs(server_players) do
-            server_player.x = lerp(server_player.x, server_player.target_x, delta * 45)
-            server_player.y = lerp(server_player.y, server_player.target_y, delta * 45)
+            server_player.x = lerp(server_player.x, server_player.target_x, delta * 20)
+            server_player.y = lerp(server_player.y, server_player.target_y, delta * 20)
         end
 
         
@@ -355,7 +362,7 @@ function love.mousepressed(mx, my, mButton)
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
 
-                server_peer = client:connect("209.103.45.67:9999")
+                server_peer = client:connect("127.0.0.1:9999")
                 waitingForDisconnect = false
             end
         end

@@ -24,11 +24,12 @@ local players = {}
 local player_addr_to_id = {}
 local broadcast_positions_rate = 45
 local broadcast_positions_timer = 0
+local position_sequence = 0
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
-    server = enet.host_create("0.0.0.0:9999")
+    server = enet.host_create("*:9999")
     if server == nil then
         print("Server failed to create")
         love.event.quit()
@@ -196,10 +197,13 @@ function love.update(delta)
         for player_id1, player1 in pairs(players) do
             for player_id2, player2 in pairs(players) do
                 if player_id1 ~= player_id2 then
-                    player1.peer:send("p" .. love.data.pack("string", "<I4ff", player_id2, player2.x, player2.y), 0, "unreliable")
+                    player1.peer:send("p" .. love.data.pack("string", "<I4I4ff", player_id2, position_sequence, player2.x, player2.y), 0,
+                        "unreliable")
                 end
             end
         end
+        position_sequence = position_sequence + 1
+        
         broadcast_positions_timer = 0
     end
 
