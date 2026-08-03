@@ -98,8 +98,8 @@ function gameDraw(gameMouseX, gameMouseY)
 
         for i = -120, 120, 1 do
             for j = -120, 120, 1 do
-                love.graphics.draw(grassImage, math.round(i * grassImage:getWidth()),
-                    math.round(j * grassImage:getHeight()))
+                love.graphics.draw(grassImage, math.round(i * (grassImage:getWidth() * 2)),
+                    math.round(j * (grassImage:getHeight() * 2)), 0.0, 2.0, 2.0)
             end
         end
 
