@@ -145,6 +145,49 @@ function love.update(delta)
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end
 
+            -- add player collision with each other
+            for iteration = 1, 10 do
+                for player_id1, player1 in pairs(players) do
+                    for player_id2, player2 in pairs(players) do
+                        if player_id1 ~= player_id2 then
+                            local distance = math.sqrt((player1.x - player2.x) ^ 2 + (player1.y - player2.y) ^ 2)
+
+                            local dx
+                            local dy
+
+                            if distance == 0.0 then
+                                dx = 0.70710678118
+                                dy = 0.70710678118
+                            else
+                                dx = (player2.x - player1.x) / distance
+                                dy = (player2.y - player1.y) / distance
+                            end
+
+                            if distance < 24.0 then
+                                player1.x = player1.x - dx * 2
+                                player1.y = player1.y - dy * 2
+                                player2.x = player2.x + dx * 2
+                                player2.y = player2.y + dy * 2
+                            end
+                        end
+                    end
+                end
+
+                -- make a bounding box to hold the players in
+
+                for player_id, player in pairs(players) do
+                    player.x = math.min(math.max(player.x, -1000), 1000)
+                    player.y = math.min(math.max(player.y, -1000), 1000)
+                end
+            end
+
+            
+
+            -- Send final positions
+            for _, seq_num in ipairs(seq_nums) do
+                player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
+            end
+
             player.input_frames_to_process = {}
             
         end

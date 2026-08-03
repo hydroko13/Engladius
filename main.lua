@@ -96,10 +96,10 @@ function gameDraw(gameMouseX, gameMouseY)
 
 
 
-        love.graphics.translate(math.round(camoffsetx), math.round(camoffsety))
+        love.graphics.translate(camoffsetx, camoffsety)
 
-        for i = -50, 50, 1 do
-            for j = -50, 50, 1 do
+        for i = -120, 120, 1 do
+            for j = -120, 120, 1 do
                 love.graphics.draw(grassImage, math.round(i * grassImage:getWidth()),
                     math.round(j * grassImage:getHeight()))
             end
@@ -111,8 +111,8 @@ function gameDraw(gameMouseX, gameMouseY)
         end
 
         if player then
-            love.graphics.draw(playerImage, math.round(player.x - playerImage:getWidth() / 2),
-                math.round(player.y - playerImage:getHeight() / 2))
+            love.graphics.draw(playerImage, math.round(player.render_x - playerImage:getWidth() / 2),
+                math.round(player.render_y - playerImage:getHeight() / 2))
         end
         
 
@@ -174,8 +174,8 @@ function joined()
     player = {
         x = 0,
         y = 0,
-        target_x = 0,
-        target_y = 0,
+        render_x = 0,
+        render_y = 0,
         input_state = {
             left = false,
             right = false,
@@ -192,6 +192,13 @@ function love.update(delta)
 
     if not client then return end
     if not server_peer then return end
+
+    if player then
+
+        player.render_x = lerp(player.render_x, player.x, delta * 34)
+        player.render_y = lerp(player.render_y, player.y, delta * 34)
+        
+    end
 
     local event = client:service(0)
     while event do
