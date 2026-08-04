@@ -113,9 +113,23 @@ function gameDraw(gameMouseX, gameMouseY)
                 math.round(player.render_y - playerImage:getHeight() / 2))
         end
 
-
-
         love.graphics.pop()
+
+        -- Draw hotbar
+
+        for slot_idx = 1, 9 do
+            love.graphics.setColor(184/255, 184/255, 184/255, 1)
+            love.graphics.rectangle("fill", WIDTH / 2 + ((slot_idx - 5) * 34), HEIGHT - 40, 22, 22)
+            love.graphics.setColor(5 / 255, 5 / 255, 5 / 255, 1)
+            love.graphics.setLineWidth(2)
+            love.graphics.rectangle("line", WIDTH / 2 + ((slot_idx - 5) * 34), HEIGHT - 40, 22, 22)
+            love.graphics.setFont(engladiusFont)
+            love.graphics.setColor(0, 0, 0, 1)
+            
+            love.graphics.print(tostring(slot_idx), WIDTH / 2 + ((slot_idx - 5) * 34) + 6, HEIGHT - 40 + 2, 0, 0.5, 0.5)
+        end
+        
+        
     end
 end
 
@@ -144,6 +158,8 @@ function love.draw()
     gameDraw(gameMouseX, gameMouseY)
 
 
+    love.graphics.setColor(1, 1, 1, 1)
+    
     love.graphics.draw(cursorImg, gameMouseX - 16, gameMouseY - 16, 0, 2, 2)
 
     love.graphics.setCanvas()

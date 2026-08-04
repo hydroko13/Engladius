@@ -26,6 +26,7 @@ local broadcast_positions_rate = 45
 local broadcast_positions_timer = 0
 local position_sequence = 0
 
+
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
@@ -164,7 +165,7 @@ function love.update(delta)
                                 dy = (player2.y - player1.y) / distance
                             end
 
-                            if distance < 24.0 then
+                            if distance < 20.0 then
                                 player1.x = player1.x - dx * 2
                                 player1.y = player1.y - dy * 2
                                 player2.x = player2.x + dx * 2
