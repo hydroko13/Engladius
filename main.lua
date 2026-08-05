@@ -24,6 +24,7 @@ local is_frozen = false
 local tick_delta = 1 / tick_rate
 
 local pending_inputs = {}
+local input_history = {}
 
 function math.round(x)
     return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
@@ -211,13 +212,30 @@ function ontick()
             bit.bor(bit.bor((player.input_state.down and 1 or 0), bit.lshift(player.input_state.up and 1 or 0, 1)),
                 bit.lshift(player.input_state.right and 1 or 0, 2), bit.lshift(player.input_state.left and 1 or 0, 3))
         )
-        local inputstate_packet_string = love.data.pack("string", "<I4I1", tick, packed)
+
+        input_history[#input_history + 1] = packed
+
+        while #input_history > 8 do
+            table.remove(input_history, 1)
+        end
+
+        local base_seq = tick - #input_history + 1
+
+        
+        
+        local inputstate_packet_string = love.data.pack("string", "<I4I1", base_seq, #input_history)
+
+
+        for i = 1, #input_history do
+            inputstate_packet_string = inputstate_packet_string .. string.char(input_history[i])
+        end
+        
         server_peer:send("p" .. inputstate_packet_string, 0, "unreliable")
+        
         pending_inputs[tick] = {
             up = player.input_state.up,
             down = player.input_state.down,
-            left = player.input_state
-                .left,
+            left = player.input_state.left,
             right = player.input_state.right,
             dt = player.input_state.dt
         }

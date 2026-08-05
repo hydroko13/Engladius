@@ -75,7 +75,8 @@ function love.update(delta)
                 input_state = { down = false, up = false, right = false, left = false, seq = 0 },
                 input_frames_to_process = {},
                 frozen_timer = 0,
-                expected_seq = 1
+                expected_seq = 1,
+                last_processed_seq = 0
             }
             player_addr_to_id[tostring(event.peer)] = id_str
         end
@@ -105,17 +106,21 @@ function love.update(delta)
             if event.data:sub(1, 1) == "p" then
                 local player = players[id_str]
                 if player then
-                    local _, seq_num, input_byte = love.data.unpack("<i1I4I1", event.data)
-                    if player.expected_seq and seq_num ~= player.expected_seq then
-                        print("GAP: expected " .. player.expected_seq .. " got " .. seq_num)
-                    end
-                    player.expected_seq = seq_num + 1
-                    local down = bit.band(input_byte, 1) ~= 0
-                    local up = bit.band(input_byte, 2) ~= 0
-                    local right = bit.band(input_byte, 4) ~= 0
-                    local left = bit.band(input_byte, 8) ~= 0
+                    local _, base_seq, count = love.data.unpack("<i1I4I1", event.data)
+                    for i = 0, count - 1 do
+                        local seq_num = base_seq + i
 
-                    player.input_frames_to_process[seq_num] = { down = down, up = up, right = right, left = left }
+                        if seq_num > player.last_processed_seq then
+                            local input_byte = event.data:byte(7 + i)
+                            player.input_frames_to_process[seq_num] = {
+                                down = bit.band(input_byte, 1) ~= 0,
+                                up = bit.band(input_byte, 2) ~= 0,
+                                right = bit.band(input_byte, 4) ~= 0,
+                                left = bit.band(input_byte, 8) ~= 0,
+                            }
+                        end
+                    end
+                
                     
                 end
             end
@@ -164,8 +169,13 @@ function love.update(delta)
                     player.x = player.x - tick_delta * player_default_speed
                     player.frozen_timer = 0
                 end
-                
             end
+
+            if #seq_nums > 0 then
+                player.last_processed_seq = seq_nums[#seq_nums]
+            end
+
+            
 
             -- add player collision with each other
             for iteration = 1, 10 do
