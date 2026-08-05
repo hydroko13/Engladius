@@ -28,7 +28,7 @@ local position_sequence = 0
 local tick_delta = 1 / tick_rate
 local server_fps_cap = 1000
 local server_fps_cap_last_time = nil
-local player_default_speed = 180
+local player_default_speed = 140
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()

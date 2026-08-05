@@ -17,7 +17,7 @@ local tick = 0
 local tick_timer = 0
 local tick_rate = 60
 local server_players = {}
-local player_default_speed = 180
+local player_default_speed = 140
 
 local tick_delta = 1 / tick_rate
 
