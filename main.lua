@@ -15,10 +15,10 @@ local camera = { x = 0, y = 0 }
 local WIDTH, HEIGHT = 640, 360
 local tick = 0
 local tick_timer = 0.0
-local tick_rate = 45.0
+local tick_rate = 30.0
 local server_players = {}
 
-local TICK_DT = 1.0 / 45.0
+local TICK_DT = 1.0 / 30.0
 
 local pending_inputs = {}
 
@@ -378,7 +378,7 @@ function love.mousepressed(mx, my, mButton)
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
 
-                server_peer = client:connect("209.103.45.67:9999")
+                server_peer = client:connect("10.0.0.105:9999")
                 waitingForDisconnect = false
             end
         end

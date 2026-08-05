@@ -22,27 +22,41 @@ local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
-local broadcast_positions_rate = 45
-local broadcast_positions_timer = 0
+local tick_rate = 30
+local tick_timer = 0
 local position_sequence = 0
-
+local tick_delta = 1 / tick_rate
+local server_fps_cap = 60
+local server_fps_cap_last_time = nil
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
-    server = enet.host_create("*:9999")
+    server = enet.host_create("10.0.0.105:9999")
     if server == nil then
         print("Server failed to create")
         love.event.quit()
     end
-   
+
 end
 
 
 ---@diagnostic disable-next-line: duplicate-set-field
-function love.update(delta)
-    if not server then return end -- if the server wasnt created yet then return from this function
+function love.update(real_dt)
+    if server_fps_cap_last_time == nil then
+        server_fps_cap_last_time = love.timer.getTime()
+    end
 
+    if love.timer.getTime() - server_fps_cap_last_time < 1 / server_fps_cap then
+        return
+        
+    end
+
+    local delta = love.timer.getTime() - server_fps_cap_last_time
+    
+    server_fps_cap_last_time = love.timer.getTime()
+    if not server then return end -- if the server wasnt created yet then return from this function
+    print(1/delta)
     local event = server:service(0)
     while event do
         if event.type == "connect" then
@@ -116,9 +130,14 @@ function love.update(delta)
     end
 
     
-    broadcast_positions_timer = broadcast_positions_timer + delta
-    if broadcast_positions_timer >= 1 / broadcast_positions_rate then
+    tick_timer = tick_timer + delta
+    
+    if tick_timer >= tick_delta then
 
+        
+        
+        tick_timer = tick_timer - tick_delta
+        
         for player_id, player in pairs(players) do
 
             local seq_nums = {}
@@ -133,16 +152,16 @@ function love.update(delta)
             for _, seq_num in ipairs(seq_nums) do
                 local input_state = player.input_frames_to_process[seq_num]
                 if input_state.down then
-                    player.y = player.y + broadcast_positions_timer * 130
+                    player.y = player.y + tick_delta * 130
                 end
                 if input_state.up then
-                    player.y = player.y - broadcast_positions_timer * 130
+                    player.y = player.y - tick_delta * 130
                 end
                 if input_state.right then
-                    player.x = player.x + broadcast_positions_timer * 130
+                    player.x = player.x + tick_delta * 130
                 end
                 if input_state.left then
-                    player.x = player.x - broadcast_positions_timer * 130
+                    player.x = player.x - tick_delta * 130
                 end
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end
@@ -205,7 +224,6 @@ function love.update(delta)
         end
         position_sequence = position_sequence + 1
         
-        broadcast_positions_timer = 0
     end
 
     
