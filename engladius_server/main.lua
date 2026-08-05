@@ -26,13 +26,14 @@ local tick_rate = 30
 local tick_timer = 0
 local position_sequence = 0
 local tick_delta = 1 / tick_rate
-local server_fps_cap = 60
+local server_fps_cap = 80
 local server_fps_cap_last_time = nil
+local player_default_speed = 250
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
     print("Engladius Server Software (ESS) version 0.0.1-dev")
-    server = enet.host_create("10.0.0.105:9999")
+    server = enet.host_create("*:9999")
     if server == nil then
         print("Server failed to create")
         love.event.quit()
@@ -152,16 +153,16 @@ function love.update(real_dt)
             for _, seq_num in ipairs(seq_nums) do
                 local input_state = player.input_frames_to_process[seq_num]
                 if input_state.down then
-                    player.y = player.y + tick_delta * 130
+                    player.y = player.y + tick_delta * player_default_speed
                 end
                 if input_state.up then
-                    player.y = player.y - tick_delta * 130
+                    player.y = player.y - tick_delta * player_default_speed
                 end
                 if input_state.right then
-                    player.x = player.x + tick_delta * 130
+                    player.x = player.x + tick_delta * player_default_speed
                 end
                 if input_state.left then
-                    player.x = player.x - tick_delta * 130
+                    player.x = player.x - tick_delta * player_default_speed
                 end
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end

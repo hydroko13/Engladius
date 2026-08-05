@@ -1,7 +1,7 @@
 local vers = "0.0.1-dev"
 
 
-
+local server_ip = "localhost:9999"
 local button = require("gui.Button")
 local enet = require("enet")
 local bit = require("bit")
@@ -17,6 +17,7 @@ local tick = 0
 local tick_timer = 0.0
 local tick_rate = 30.0
 local server_players = {}
+local player_default_speed = 250
 
 local TICK_DT = 1.0 / 30.0
 
@@ -183,16 +184,16 @@ function ontick()
         player.input_state.right = love.keyboard.isDown("d")
 
         if player.input_state.up then
-            player.y = player.y - TICK_DT * 130
+            player.y = player.y - TICK_DT * player_default_speed
         end
         if player.input_state.down then
-            player.y = player.y + TICK_DT * 130
+            player.y = player.y + TICK_DT * player_default_speed
         end
         if player.input_state.left then
-            player.x = player.x - TICK_DT * 130
+            player.x = player.x - TICK_DT * player_default_speed
         end
         if player.input_state.right then
-            player.x = player.x + TICK_DT * 130
+            player.x = player.x + TICK_DT * player_default_speed
         end
 
         -- use bitpacking to store the 4 input state booleans into a single byte
@@ -294,16 +295,16 @@ function love.update(delta)
                         player.input_state.left = input.left
                         player.input_state.right = input.right
                         if player.input_state.up then
-                            player.y = player.y - TICK_DT * 130
+                            player.y = player.y - TICK_DT * player_default_speed
                         end
                         if player.input_state.down then
-                            player.y = player.y + TICK_DT * 130
+                            player.y = player.y + TICK_DT * player_default_speed
                         end
                         if player.input_state.left then
-                            player.x = player.x - TICK_DT * 130
+                            player.x = player.x - TICK_DT * player_default_speed
                         end
                         if player.input_state.right then
-                            player.x = player.x + TICK_DT * 130
+                            player.x = player.x + TICK_DT * player_default_speed
                         end
                     end
                 end
@@ -378,7 +379,7 @@ function love.mousepressed(mx, my, mButton)
             if playButton:wasClicked(engladiusFont, gameMouseX, gameMouseY) then
                 gameState = "connecting"
 
-                server_peer = client:connect("10.0.0.105:9999")
+                server_peer = client:connect(server_ip)
                 waitingForDisconnect = false
             end
         end
