@@ -1,7 +1,7 @@
 local vers = "0.0.1-dev"
 
 
-local server_ip = "localhost:9999"
+local server_ip = "10.0.0.105:9999"
 local button = require("gui.Button")
 local enet = require("enet")
 local bit = require("bit")
@@ -14,12 +14,12 @@ local camera = { x = 0, y = 0 }
 
 local WIDTH, HEIGHT = 640, 360
 local tick = 0
-local tick_last_time = nil
+local tick_timer = 0
 local tick_rate = 60
 local server_players = {}
 local player_default_speed = 180
 
-local tick_delta = 0
+local tick_delta = 1 / tick_rate
 
 local pending_inputs = {}
 
@@ -174,6 +174,7 @@ function love.draw()
 end
 
 function ontick()
+    
     if player then
 
 
@@ -236,10 +237,11 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+
     
     if not client then return end
     if not server_peer then return end
-
+        
 
 
     local event = client:service(0)
@@ -314,20 +316,6 @@ function love.update(delta)
         event = client:service(0)
     end
 
-    if tick_last_time == nil then
-        tick_last_time = love.timer.getTime()
-        tick_delta = tick_last_time
-    else
-        tick_delta = love.timer.getTime() - tick_last_time
-    end
-
-
-    local ticked = false
-    
-    if tick_delta >= 1 / tick_rate then
-        tick_last_time = love.timer.getTime()
-        ticked = true
-    end
 
 
     if gameState == "inGame" then
@@ -348,7 +336,15 @@ function love.update(delta)
 
         
 
-        if ticked then
+        tick_timer = tick_timer + delta
+        
+        while tick_timer >= 1 / tick_rate do
+
+           
+    
+            tick_timer = tick_timer - 1 / tick_rate
+            
+
             tick = tick + 1
             ontick()
         end

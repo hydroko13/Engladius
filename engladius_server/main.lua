@@ -23,7 +23,7 @@ local server
 local players = {}
 local player_addr_to_id = {}
 local tick_rate = 60
-local tick_last_time = nil
+local tick_timer = 0
 local position_sequence = 0
 local tick_delta = 0
 local server_fps_cap = 1000
@@ -118,15 +118,11 @@ function love.update(delta)
         event = server:service(0)
     end
     
-    if tick_last_time == nil then
-        tick_last_time = love.timer.getTime()
-        tick_delta = tick_last_time
-    else
-        tick_delta = love.timer.getTime() - tick_last_time
-    end
-    if tick_delta >= 1 / tick_rate then
 
-        tick_last_time = love.timer.getTime()
+    tick_timer = tick_timer + delta
+    while tick_timer >= 1 / tick_rate do
+
+        tick_timer = tick_timer - 1 / tick_rate
 
         for player_id, player in pairs(players) do
 
