@@ -22,7 +22,7 @@ local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
-local tick_rate = 60
+local tick_rate = 20
 local tick_timer = 0
 local position_sequence = 0
 local tick_delta = 1 / tick_rate
@@ -74,7 +74,8 @@ function love.update(delta)
                 peer = event.peer,
                 input_state = { down = false, up = false, right = false, left = false, seq = 0 },
                 input_frames_to_process = {},
-                frozen_timer = 0
+                frozen_timer = 0,
+                expected_seq = 1
             }
             player_addr_to_id[tostring(event.peer)] = id_str
         end
@@ -105,6 +106,10 @@ function love.update(delta)
                 local player = players[id_str]
                 if player then
                     local _, seq_num, input_byte = love.data.unpack("<i1I4I1", event.data)
+                    if player.expected_seq and seq_num ~= player.expected_seq then
+                        print("GAP: expected " .. player.expected_seq .. " got " .. seq_num)
+                    end
+                    player.expected_seq = seq_num + 1
                     local down = bit.band(input_byte, 1) ~= 0
                     local up = bit.band(input_byte, 2) ~= 0
                     local right = bit.band(input_byte, 4) ~= 0
@@ -159,7 +164,7 @@ function love.update(delta)
                     player.x = player.x - tick_delta * player_default_speed
                     player.frozen_timer = 0
                 end
-                player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
+                
             end
 
             -- add player collision with each other
@@ -220,7 +225,7 @@ function love.update(delta)
                 end
             end
 
-            if player1.frozen_timer > 0.5 then
+            if player1.frozen_timer > 0.09 then
                 player1.peer:send("w0", 0, "unreliable")
             else
                 player1.peer:send("w1", 0, "unreliable")

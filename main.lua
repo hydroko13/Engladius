@@ -15,7 +15,7 @@ local camera = { x = 0, y = 0 }
 local WIDTH, HEIGHT = 640, 360
 local tick = 0
 local tick_timer = 0
-local tick_rate = 60
+local tick_rate = 20
 local server_players = {}
 local player_default_speed = 140
 
@@ -113,7 +113,7 @@ function gameDraw(gameMouseX, gameMouseY)
         end
 
         if player then
-            love.graphics.draw(playerImage, mathu.round(player.render_x - playerImage:getWidth() / 2),
+            love.graphics.draw(playerImage, math.round(player.render_x - playerImage:getWidth() / 2),
                 math.round(player.render_y - playerImage:getHeight() / 2))
         end
 
@@ -133,10 +133,10 @@ function gameDraw(gameMouseX, gameMouseY)
             love.graphics.print(tostring(slot_idx), WIDTH / 2 + ((slot_idx - 5) * 34) + 6, HEIGHT - 40 + 2, 0, 0.5, 0.5)
         end
 
-        if is_frozen then
-            love.graphics.setColor(1, 0, 0, 1)
-            love.graphics.rectangle("fill", 0, 0, 400, 300)
-        end
+        -- if is_frozen then
+        --     love.graphics.setColor(1, 0, 0, 1)
+        --     love.graphics.rectangle("fill", 0, 0, 400, 300)
+        -- end
 
         
         
