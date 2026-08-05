@@ -73,7 +73,8 @@ function love.update(delta)
                 y = 0,
                 peer = event.peer,
                 input_state = { down = false, up = false, right = false, left = false, seq = 0 },
-                input_frames_to_process = {}
+                input_frames_to_process = {},
+                frozen_timer = 0
             }
             player_addr_to_id[tostring(event.peer)] = id_str
         end
@@ -117,6 +118,11 @@ function love.update(delta)
 
         event = server:service(0)
     end
+
+
+    for _, player in pairs(players) do
+        player.frozen_timer = player.frozen_timer + delta
+    end
     
 
     tick_timer = tick_timer + delta
@@ -139,15 +145,19 @@ function love.update(delta)
                 local input_state = player.input_frames_to_process[seq_num]
                 if input_state.down then
                     player.y = player.y + tick_delta * player_default_speed
+                    player.frozen_timer = 0
                 end
                 if input_state.up then
                     player.y = player.y - tick_delta * player_default_speed
+                    player.frozen_timer = 0
                 end
                 if input_state.right then
                     player.x = player.x + tick_delta * player_default_speed
+                    player.frozen_timer = 0
                 end
                 if input_state.left then
                     player.x = player.x - tick_delta * player_default_speed
+                    player.frozen_timer = 0
                 end
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end
@@ -188,8 +198,8 @@ function love.update(delta)
                 end
             end
 
+            -- increment frozen timer
             
-
             -- Send final positions
             for _, seq_num in ipairs(seq_nums) do
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
@@ -203,9 +213,17 @@ function love.update(delta)
         for player_id1, player1 in pairs(players) do
             for player_id2, player2 in pairs(players) do
                 if player_id1 ~= player_id2 then
-                    player1.peer:send("p" .. love.data.pack("string", "<I4I4ff", player_id2, position_sequence, player2.x, player2.y), 0,
+                    player1.peer:send(
+                        "p" .. love.data.pack("string", "<I4I4ff", player_id2, position_sequence, player2.x, player2.y),
+                        0,
                         "unreliable")
                 end
+            end
+
+            if player1.frozen_timer > 0.5 then
+                player1.peer:send("w0", 0, "unreliable")
+            else
+                player1.peer:send("w1", 0, "unreliable")
             end
         end
         position_sequence = position_sequence + 1

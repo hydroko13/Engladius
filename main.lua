@@ -19,6 +19,8 @@ local tick_rate = 60
 local server_players = {}
 local player_default_speed = 140
 
+local is_frozen = false
+
 local tick_delta = 1 / tick_rate
 
 local pending_inputs = {}
@@ -111,7 +113,7 @@ function gameDraw(gameMouseX, gameMouseY)
         end
 
         if player then
-            love.graphics.draw(playerImage, math.round(player.render_x - playerImage:getWidth() / 2),
+            love.graphics.draw(playerImage, mathu.round(player.render_x - playerImage:getWidth() / 2),
                 math.round(player.render_y - playerImage:getHeight() / 2))
         end
 
@@ -130,6 +132,12 @@ function gameDraw(gameMouseX, gameMouseY)
             
             love.graphics.print(tostring(slot_idx), WIDTH / 2 + ((slot_idx - 5) * 34) + 6, HEIGHT - 40 + 2, 0, 0.5, 0.5)
         end
+
+        if is_frozen then
+            love.graphics.setColor(1, 0, 0, 1)
+            love.graphics.rectangle("fill", 0, 0, 400, 300)
+        end
+
         
         
     end
@@ -271,6 +279,15 @@ function love.update(delta)
                     server_players[player_id].target_y = y
                     p.last_seq = seq
                 end
+            elseif event.data:sub(1, 1) == "w" then
+                local chartwo = event.data:sub(2, 2)
+
+                if chartwo == '0' then
+                    is_frozen = true
+                elseif chartwo == '1' then
+                    is_frozen = false
+                end
+            
             elseif event.data:sub(1, 1) == "I" then
                 local _, seq, x, y = love.data.unpack("<i1I4ff", event.data)
 
