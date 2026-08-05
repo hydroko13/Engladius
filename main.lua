@@ -14,12 +14,12 @@ local camera = { x = 0, y = 0 }
 
 local WIDTH, HEIGHT = 640, 360
 local tick = 0
-local tick_timer = 0.0
-local tick_rate = 30.0
+local tick_last_time = nil
+local tick_rate = 60
 local server_players = {}
-local player_default_speed = 250
+local player_default_speed = 180
 
-local TICK_DT = 1.0 / 30.0
+local tick_delta = 0
 
 local pending_inputs = {}
 
@@ -45,6 +45,7 @@ function love.load()
 
     love.window.setIcon(iconImg)
 
+    love.window.setVSync(0)
 
     engladiusFont = love.graphics.newFont("assets/alagard.ttf", 24)
     titleFont = love.graphics.newFont("assets/alagard.ttf", 64)
@@ -184,16 +185,16 @@ function ontick()
         player.input_state.right = love.keyboard.isDown("d")
 
         if player.input_state.up then
-            player.y = player.y - TICK_DT * player_default_speed
+            player.y = player.y - tick_delta * player_default_speed
         end
         if player.input_state.down then
-            player.y = player.y + TICK_DT * player_default_speed
+            player.y = player.y + tick_delta * player_default_speed
         end
         if player.input_state.left then
-            player.x = player.x - TICK_DT * player_default_speed
+            player.x = player.x - tick_delta * player_default_speed
         end
         if player.input_state.right then
-            player.x = player.x + TICK_DT * player_default_speed
+            player.x = player.x + tick_delta * player_default_speed
         end
 
         -- use bitpacking to store the 4 input state booleans into a single byte
@@ -235,6 +236,7 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+    
     if not client then return end
     if not server_peer then return end
 
@@ -253,7 +255,6 @@ function love.update(delta)
         if event.type == "receive" then
             if event.data:sub(1, 1) == "j" then -- New Player joined
                 local _, player_id, x, y = love.data.unpack("<i1I4ff", event.data)
-                print(player_id, x, y)
                 server_players[player_id] = { x = x, y = y, target_x = x, target_y = y, last_seq = 0 }
             elseif event.data:sub(1, 1) == "l" then -- Player left
                 local _, player_id = love.data.unpack("<i1I4", event.data)
@@ -268,8 +269,6 @@ function love.update(delta)
                     server_players[player_id].target_y = y
                     p.last_seq = seq
                 end
-                
-
             elseif event.data:sub(1, 1) == "I" then
                 local _, seq, x, y = love.data.unpack("<i1I4ff", event.data)
 
@@ -295,16 +294,16 @@ function love.update(delta)
                         player.input_state.left = input.left
                         player.input_state.right = input.right
                         if player.input_state.up then
-                            player.y = player.y - TICK_DT * player_default_speed
+                            player.y = player.y - tick_delta * player_default_speed
                         end
                         if player.input_state.down then
-                            player.y = player.y + TICK_DT * player_default_speed
+                            player.y = player.y + tick_delta * player_default_speed
                         end
                         if player.input_state.left then
-                            player.x = player.x - TICK_DT * player_default_speed
+                            player.x = player.x - tick_delta * player_default_speed
                         end
                         if player.input_state.right then
-                            player.x = player.x + TICK_DT * player_default_speed
+                            player.x = player.x + tick_delta * player_default_speed
                         end
                     end
                 end
@@ -315,12 +314,29 @@ function love.update(delta)
         event = client:service(0)
     end
 
+    if tick_last_time == nil then
+        tick_last_time = love.timer.getTime()
+        tick_delta = tick_last_time
+    else
+        tick_delta = love.timer.getTime() - tick_last_time
+    end
+
+
+    local ticked = false
+    
+    if tick_delta >= 1 / tick_rate then
+        tick_last_time = love.timer.getTime()
+        ticked = true
+    end
+
 
     if gameState == "inGame" then
 
         
         camera.x = camera.x + (player.render_x - camera.x) * delta * 2.5
         camera.y = camera.y + (player.render_y - camera.y) * delta * 2.5
+
+        
 
         
         for player_id, server_player in pairs(server_players) do
@@ -330,10 +346,10 @@ function love.update(delta)
 
         
 
-        tick_timer = tick_timer + delta
-        if tick_timer >= 1.0 / tick_rate then
+        
+
+        if ticked then
             tick = tick + 1
-            tick_timer = 0.0
             ontick()
         end
 

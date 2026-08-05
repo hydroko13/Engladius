@@ -22,13 +22,13 @@ local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
-local tick_rate = 30
-local tick_timer = 0
+local tick_rate = 60
+local tick_last_time = nil
 local position_sequence = 0
-local tick_delta = 1 / tick_rate
-local server_fps_cap = 80
+local tick_delta = 0
+local server_fps_cap = 1000
 local server_fps_cap_last_time = nil
-local player_default_speed = 250
+local player_default_speed = 180
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.load()
@@ -43,21 +43,10 @@ end
 
 
 ---@diagnostic disable-next-line: duplicate-set-field
-function love.update(real_dt)
-    if server_fps_cap_last_time == nil then
-        server_fps_cap_last_time = love.timer.getTime()
-    end
-
-    if love.timer.getTime() - server_fps_cap_last_time < 1 / server_fps_cap then
-        return
-        
-    end
-
-    local delta = love.timer.getTime() - server_fps_cap_last_time
+function love.update(delta)
     
-    server_fps_cap_last_time = love.timer.getTime()
     if not server then return end -- if the server wasnt created yet then return from this function
-    print(1/delta)
+
     local event = server:service(0)
     while event do
         if event.type == "connect" then
@@ -76,7 +65,6 @@ function love.update(real_dt)
 
             -- Notify new joiner of other players who already existed
             for player_id, player in pairs(players) do
-                print(player_id, player.x, player.y)
                 event.peer:send("j" .. love.data.pack("string", "<I4ff", player_id, player.x, player.y), 0, "reliable")
             end
 
@@ -129,16 +117,17 @@ function love.update(real_dt)
 
         event = server:service(0)
     end
-
     
-    tick_timer = tick_timer + delta
-    
-    if tick_timer >= tick_delta then
+    if tick_last_time == nil then
+        tick_last_time = love.timer.getTime()
+        tick_delta = tick_last_time
+    else
+        tick_delta = love.timer.getTime() - tick_last_time
+    end
+    if tick_delta >= 1 / tick_rate then
 
-        
-        
-        tick_timer = tick_timer - tick_delta
-        
+        tick_last_time = love.timer.getTime()
+
         for player_id, player in pairs(players) do
 
             local seq_nums = {}
