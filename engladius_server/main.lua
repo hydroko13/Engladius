@@ -22,7 +22,7 @@ local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
-local tick_rate = 20
+local tick_rate = 30
 local tick_timer = 0
 local position_sequence = 0
 local tick_delta = 1 / tick_rate

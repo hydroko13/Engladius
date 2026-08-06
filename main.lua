@@ -146,6 +146,7 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.draw()
+    print(love.timer.getFPS())
     local winWidth, winHeight = love.graphics.getDimensions()
     local scale = math.min(winWidth / WIDTH, winHeight / HEIGHT)
 
@@ -373,7 +374,7 @@ function love.update(delta)
 
         tick_timer = tick_timer + delta
         
-        while tick_timer >= 1 / tick_rate do
+        if tick_timer >= 1 / tick_rate then
 
            
     
