@@ -22,12 +22,12 @@ local bit = require("bit")
 local server
 local players = {}
 local player_addr_to_id = {}
-local tick_rate = 30
+local tick_rate = 60
 local tick_timer = 0
 local position_sequence = 0
 local tick_delta = 1 / tick_rate
-local server_fps_cap = 1000
-local server_fps_cap_last_time = nil
+local server_fps_cap = 120
+local server_fps_cap_timer = 0
 local player_default_speed = 140
 
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -44,10 +44,12 @@ end
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function love.update(delta)
+
+    
     
     if not server then return end -- if the server wasnt created yet then return from this function
-
-    local event = server:service(0)
+    print(1/delta)
+    local event = server:service(10)
     while event do
         if event.type == "connect" then
             local ids = {}
@@ -68,6 +70,9 @@ function love.update(delta)
                 event.peer:send("j" .. love.data.pack("string", "<I4ff", player_id, player.x, player.y), 0, "reliable")
             end
 
+            server:flush()
+
+            
             players[id_str] = {
                 x = 0,
                 y = 0,
@@ -96,6 +101,7 @@ function love.update(delta)
                 for _, player in pairs(players) do -- Notify other players of leaving
                     player.peer:send("l" .. love.data.pack("string", "<I4", id_num), 0, "reliable")
                 end
+                server:flush()
             end
         end
 
@@ -118,6 +124,7 @@ function love.update(delta)
                                 right = bit.band(input_byte, 4) ~= 0,
                                 left = bit.band(input_byte, 8) ~= 0,
                             }
+                            print(seq_num)
                         end
                     end
                 
@@ -126,7 +133,7 @@ function love.update(delta)
             end
         end
 
-        event = server:service(0)
+        event = server:service()
     end
 
 
@@ -216,10 +223,12 @@ function love.update(delta)
             -- increment frozen timer
             
             -- Send final positions
+            
             for _, seq_num in ipairs(seq_nums) do
                 player.peer:send("I" .. love.data.pack("string", "<I4ff", seq_num, player.x, player.y), 0, "unreliable")
             end
 
+            server:flush()
             player.input_frames_to_process = {}
             
         end
